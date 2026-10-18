@@ -1,0 +1,15 @@
+"SkynetMapVote"
+{
+    "tfdb_amazon_b1"    "3"
+    "tfdb_backyard"    "3"
+    "tfdb_blockland_v4_1"    "3"
+    "tfdb_hellspawn_b2"    "3"
+    "tfdb_indoor_tennis_b1a"    "3"
+    "tfdb_pacmen_a4"    "3"
+    "tfdb_risky_heights_v2"    "3"
+    "tfdb_rocketbucks_v2"    "3"
+    "tfdb_toolsheds_b4"    "3"
+    "tfdb_cwg_gym_v1"    "3"
+    "tfdb_greybox"    "3"
+    "tfdb_orangebox_b2"    "3"
+}

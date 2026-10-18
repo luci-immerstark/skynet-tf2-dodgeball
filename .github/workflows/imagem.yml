@@ -1,0 +1,81 @@
+# Monta a imagem, roda todos os testes e so publica no GitHub Container Registry se tudo passar.
+name: Imagem
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  schedule:
+    - cron: "23 7 * * *"   # todo dia: remonta com a base mais nova (TF2 atualizado), testa e so publica se passar
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: imagem-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  imagem:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    permissions:
+      contents: read
+      packages: write
+    env:
+      BASE: ghcr.io/melkortf/tf2-sourcemod/amd64:latest
+      IMAGEM: ghcr.io/${{ github.repository }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Varredura de dados sensiveis no repositorio
+        run: bash tools/varredura.sh .
+
+      - name: Creditos dos mapas preenchidos
+        run: |
+          if grep -n "AUTOR_A_CONFIRMAR" README.md; then echo "preencha os creditos dos mapas no README"; exit 1; fi
+
+      - name: Auditoria dos mapas (sha256, Dodgeball, scripts, comandos, arquivos embutidos)
+        run: python3 -I tools/auditar_mapas.py maps
+
+      - name: Liberar espaco em disco (a imagem base tem cerca de 7 GB)
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
+
+      - name: Fixar a imagem base no digest exato
+        id: base
+        run: |
+          docker pull "$BASE"
+          echo "ref=$(docker inspect --format '{{index .RepoDigests 0}}' "$BASE")" >> "$GITHUB_OUTPUT"
+
+      - name: Montar
+        env:
+          BASE_REF: ${{ steps.base.outputs.ref }}
+        run: |
+          docker build --build-arg BASE="$BASE_REF" \
+            --label org.opencontainers.image.revision="$GITHUB_SHA" \
+            --label org.opencontainers.image.base.name="$BASE_REF" \
+            -t teste:ci .
+
+      - name: Testes
+        run: bash tests/teste.sh teste:ci
+
+      - name: Publicar
+        if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ATOR: ${{ github.actor }}
+        run: |
+          printf '%s' "$TOKEN" | docker login ghcr.io -u "$ATOR" --password-stdin
+          tags="latest"
+          case "$GITHUB_REF" in refs/tags/v*) tags="$GITHUB_REF_NAME latest" ;; esac
+          for t in $tags; do
+            docker tag teste:ci "$IMAGEM:$t"
+            docker push "$IMAGEM:$t"
+          done
+          docker logout ghcr.io

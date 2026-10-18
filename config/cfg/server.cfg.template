@@ -1,0 +1,40 @@
+// SKYNET TF2 Dodgeball: este arquivo vira o server.cfg a cada inicio, com os valores das variaveis de ambiente.
+// Nao coloque senhas aqui: use as variaveis (veja o README).
+log on
+
+rcon_password "${RCON_PASSWORD}"
+hostname "${SERVER_HOSTNAME}"
+sv_password "${SERVER_PASSWORD}"
+sv_contact ""
+sv_tags "${SERVER_TAGS}"
+sv_region ${SERVER_REGION}
+
+// Download dos mapas: sem DOWNLOAD_URL (FastDL), os jogadores baixam direto do servidor (mais lento)
+sv_downloadurl "${DOWNLOAD_URL}"
+sv_allowdownload 1
+sv_allowupload 0
+
+// Seguranca: mapas da comunidade nao podem mandar comandos para o console do servidor
+sv_allow_point_servercommand "official"
+
+// Sem SourceTV: todas as vagas sao de jogadores
+tv_enable 0
+
+// Rotacao: cada mapa dura 20 minutos (a votacao do proximo mapa abre 3 minutos antes do fim)
+mapcyclefile "mapcycle.txt"
+mp_timelimit 20
+mp_maxrounds 0
+mp_winlimit 0
+mp_chattime 15
+
+tf_arena_first_blood 0
+sv_allow_votes 0
+
+// Jogador parado: vai para espectador depois de 3 minutos
+mp_idledealmethod 1
+mp_idlemaxtime 3
+
+// Voz e chat entre os dois times (padrao em servidores de Dodgeball)
+sv_alltalk 1
+
+sv_quota_stringcmdspersecond 400
